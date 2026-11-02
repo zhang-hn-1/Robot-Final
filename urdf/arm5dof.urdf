@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+==========================================================================================
+ 桌面小管家 · 第6组 —— DICE 5DoF 机械臂 URDF 模型（复原版）
+ 课程：机器人感知与控制综合实践　课程代码 (2026-2027-1)-S0610350-04　组号：第 6 组
+ 组员：张航宁 24061733（组长，建模/运动控制）、张浩轩 24061720（手势/TCP 通信与指令服务端）、
+       吴锐超 24061734（HSV 颜色识别与自动分拣/状态机互锁与系统集成测试）
+
+ 【文件性质】本 URDF 依据课程第二章实验报告表2/表3 的关节参数与实验箱 STL 网格复原；
+ 原工程包为 SolidWorks 导出（原始 PyBullet 版 URDF 见交付材料 src/code/1.txt），
+ 交付包内附本复原版用于复现与教学检查。具体复原依据逐条列在 代码包自检.md 第 2 节：
+   · 11 个连杆的 visual/collision 网格、inertial（质量与惯性张量）—— 原始 URDF 原值，非估算；
+   · 12 个关节的 parent/child/origin/axis/limit —— 原始 URDF 原值，与报告表3 一致；
+   · camera 连杆的原被注释 inertial/visual/collision —— 取自原始 URDF 注释内数值，恢复启用；
+   · world 连杆（虚拟锚固坐标系，无 STL）与 tool_center_frame 的 inertial/collision
+     —— 原始 URDF 未给，本包补充为占位/近似值，已在对应位置用注释标明「补充」；
+   · mesh 路径由原始相对路径 ../meshes/xxx.STL 改写为标准 package:// 形式。注意本交付包按任务书
+     要求的目录树把网格放在 urdf/meshes/（原工程为包根 meshes/），故 URI 写作
+     package://desktop_arm_description/urdf/meshes/xxx.STL；若按原工程结构放置，去掉 URI 中的 urdf/ 即可。
+
+ 【网格单位】STL 由 SolidWorks 以米为单位导出（实测 link2 包围盒 x 跨度 0.10 m），
+ 因此 <mesh> 不需要 scale 属性。
+ 【网格清单】交付材料共 14 个 STL：本模型用到 11 个；bucket / cube / ws_board 三个为
+ 桌面辅助场景道具（属 desktop_helper_scene 包），不使用于机械臂本体。
+ 【离线检查】python urdf/check_urdf.py 可在无 ROS 环境下校验本文件（根元素、13 连杆、
+ 12 关节、父子连通无环、limit 上下界、mesh 文件是否存在）。
+==========================================================================================
+-->
+<robot name="arm5dof">
+
+  <!-- ==================== 一、连杆（13 个） ==================== -->
+
+  <!-- world：世界根坐标系。原始 URDF 中为空 link，无 STL。
+       补充：用 0.5 m × 0.5 m × 1 mm 的半透明灰色薄板占位，表示工作台面，仅作可视化参照。 -->
+  <link name="world">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.001"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 -0.0005" rpy="0 0 0"/>
+      <geometry><box size="0.5 0.5 0.001"/></geometry>
+      <material name="table_gray"><color rgba="0.75 0.75 0.75 0.35"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 -0.0005" rpy="0 0 0"/>
+      <geometry><box size="0.5 0.5 0.001"/></geometry>
+    </collision>
+  </link>
+
+  <!-- base_link：底座与安装法兰（实验箱 6 号） -->
+  <link name="base_link">
+    <inertial>
+      <origin xyz="-0.05549 -1.2443E-05 0.014047" rpy="0 0 0"/>
+      <mass value="0.34831"/>
+      <inertia ixx="0.00037734" ixy="-1.9667E-07" ixz="-5.7059E-07" iyy="0.0011827" iyz="9.3336E-14" izz="0.0015361"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/base_link.STL"/></geometry>
+      <material name="black"><color rgba="0.3 0.3 0.3 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/base_link.STL"/></geometry>
+    </collision>
+  </link>
+  <!-- 视觉/碰撞网格 base_link.STL；惯量取自原始 URDF（SolidWorks 质量属性导出，非估算） -->
+  <!-- link1：腰回转体（joint1 驱动，绕竖直 z 轴回转） -->
+  <link name="link1">
+    <inertial>
+      <origin xyz="-0.0098047 1.4097E-06 0.014583" rpy="0 0 0"/>
+      <mass value="0.047857"/>
+      <inertia ixx="9.9743E-06" ixy="1.2606E-09" ixz="5.9862E-07" iyy="8.9062E-06" iyz="2.193E-09" izz="1.4861E-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/link1.STL"/></geometry>
+      <material name="gray"><color rgba="0.6 0.6 0.6 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/link1.STL"/></geometry>
+    </collision>
+  </link>
+  <!-- 惯量取自原始 URDF -->
+  <!-- link2：大臂（joint2 驱动，轴线水平） -->
+  <link name="link2">
+    <inertial>
+      <origin xyz="0.04 -5.5511E-17 6.7485E-17" rpy="0 0 0"/>
+      <mass value="0.020202"/>
+      <inertia ixx="9.9386E-06" ixy="1.7219E-08" ixz="-5.3147E-21" iyy="1.3724E-05" iyz="-1.594E-21" izz="5.1826E-06"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/link2.STL"/></geometry>
+      <material name="green"><color rgba="0 0.6 0 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/link2.STL"/></geometry>
+    </collision>
+  </link>
+  <!-- 大臂惯量取自原始 URDF -->
+  <!-- link3：小臂（joint3 驱动，肘关节） -->
+  <link name="link3">
+    <inertial>
+      <origin xyz="0.019908 0 -6.1294E-06" rpy="0 0 0"/>
+      <mass value="0.050927"/>
+      <inertia ixx="1.2573E-05" ixy="8.6095E-09" ixz="-1.9789E-09" iyy="1.7838E-05" iyz="3.1614E-20" izz="8.6328E-06"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/link3.STL"/></geometry>
+      <material name="gray"><color rgba="0.6 0.6 0.6 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/link3.STL"/></geometry>
+    </collision>
+  </link>
+  <!-- 惯量取自原始 URDF -->
+  <!-- link4：腕摆臂（joint4 驱动；相机支架装于此连杆） -->
+  <link name="link4">
+    <inertial>
+      <origin xyz="0.042216 0.0041806 -3.2915E-06" rpy="0 0 0"/>
+      <mass value="0.094835"/>
+      <inertia ixx="2.4341E-05" ixy="-2.5244E-06" ixz="-1.9789E-09" iyy="3.3312E-05" iyz="1.4436E-20" izz="3.0737E-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/link4.STL"/></geometry>
+      <material name="green"><color rgba="0 0.6 0 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/link4.STL"/></geometry>
+    </collision>
+  </link>
+  <!-- 相机安装孔位于本连杆，camera_link 的 origin 见下 -->
+  <!-- link5：腕回转体 + 夹爪座（joint5 驱动） -->
+  <link name="link5">
+    <inertial>
+      <origin xyz="-8.2184E-06 -0.0011968 0.01386" rpy="0 0 0"/>
+      <mass value="0.049124"/>
+      <inertia ixx="8.2684E-06" ixy="2.2759E-09" ixz="5.1987E-11" iyy="1.1645E-05" iyz="5.9116E-07" izz="1.5458E-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/link5.STL"/></geometry>
+      <material name="gray"><color rgba="0.6 0.6 0.6 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/link5.STL"/></geometry>
+    </collision>
+  </link>
+  <!-- joint5 的 origin rpy 中保留 8.794E-05 rad 微偏转（与 SolidWorks 装配一致） -->
+  <!-- left_gripper_link：左夹指（left_gripper_joint 驱动） -->
+  <link name="left_gripper_link">
+    <inertial>
+      <origin xyz="0.035118 0.00016366 5.5511E-17" rpy="0 0 0"/>
+      <mass value="0.024589"/>
+      <inertia ixx="1.611E-06" ixy="2.5381E-07" ixz="1.1103E-20" iyy="1.2951E-05" iyz="-2.2806E-22" izz="1.2364E-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/left_gripper_link.STL"/></geometry>
+      <material name="green"><color rgba="0 0.6 0 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/left_gripper_link.STL"/></geometry>
+    </collision>
+  </link>
+  <!-- 原始 URDF 中本 link 的 collision 被注释（PyBullet 防抖），此处按交付要求恢复启用 -->
+  <!-- left_rubber_pad_link：左橡胶软垫（增大摩擦，随左指运动） -->
+  <link name="left_rubber_pad_link">
+    <inertial>
+      <origin xyz="-5.5511E-17 0.0005 0" rpy="0 0 0"/>
+      <mass value="8.5E-05"/>
+      <inertia ixx="2.0542E-09" ixy="-5.8301E-25" ixz="-4.0091E-24" iyy="2.2242E-09" iyz="2.0909E-27" izz="1.8417E-10"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/left_rubber_pad_link.STL"/></geometry>
+      <material name="rubber"><color rgba="0.29804 0.29804 0.29804 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/left_rubber_pad_link.STL"/></geometry>
+    </collision>
+  </link>
+  <!-- 原始 URDF 带 PyBullet 专用 <contact> 摩擦标签，ROS urdfdom 不识别，已在文件末尾注释保留 -->
+  <!-- right_gripper_link：右夹指（经 mimic 与左指反向联动） -->
+  <link name="right_gripper_link">
+    <inertial>
+      <origin xyz="0.036355 -0.00017366 -4.996E-16" rpy="0 0 0"/>
+      <mass value="0.023734"/>
+      <inertia ixx="1.5331E-06" ixy="-2.5364E-07" ixz="-1.9986E-21" iyy="1.2074E-05" iyz="7.3824E-23" izz="1.1549E-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/right_gripper_link.STL"/></geometry>
+      <material name="green"><color rgba="0 0.6 0 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/right_gripper_link.STL"/></geometry>
+    </collision>
+  </link>
+  <!-- 原始 URDF 中本 link 的 collision 被注释，此处恢复启用 -->
+  <!-- right_rubber_pad_link：右橡胶软垫 -->
+  <link name="right_rubber_pad_link">
+    <inertial>
+      <origin xyz="3.3307E-16 -0.0005 -2.6507E-15" rpy="0 0 0"/>
+      <mass value="8.5E-05"/>
+      <inertia ixx="2.0542E-09" ixy="-8.9622E-25" ixz="1.5346E-24" iyy="2.2242E-09" iyz="3.0737E-27" izz="1.8417E-10"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/right_rubber_pad_link.STL"/></geometry>
+      <material name="rubber"><color rgba="0.29804 0.29804 0.29804 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/right_rubber_pad_link.STL"/></geometry>
+    </collision>
+  </link>
+  <!-- 原始 URDF 带 PyBullet 专用 <contact> 标签，已注释保留 -->
+  <!-- camera：腕部相机坐标（装于 link4，camera_link 固定关节） -->
+  <link name="camera">
+    <inertial>
+      <origin xyz="0.012507582644275 0.000732174960914142 -0.0180019906281733" rpy="0 0 0"/>
+      <mass value="0.182214459073633"/>
+      <inertia ixx="3.36907557025265E-05" ixy="5.37491052812001E-09" ixz="-2.59991125882536E-08" iyy="0.000396547856460873" iyz="-6.17675676299939E-08" izz="0.000390144942272885"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/camera.STL"/></geometry>
+      <material name="light_gray"><color rgba="0.898039215686275 0.917647058823529 0.929411764705882 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="package://desktop_arm_description/urdf/meshes/camera.STL"/></geometry>
+    </collision>
+  </link>
+  <!-- 原始 URDF 中 camera link 的 inertial/visual/collision 整体被注释，此处恢复启用（数值取自被注释内容） -->
+  <!-- tool_center_frame：工具中心点 TCP（黄色小圆球，原始 URDF 提供的 sphere 视觉）。
+       补充：原始 URDF 未给 inertial/collision，本包补最小惯性（0.001 kg）与同半径球碰撞体，
+       不参与动力学计算，仅供 RViz 定位与 TF 闭环判读。 -->
+  <link name="tool_center_frame">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="0.001"/>
+      <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><sphere radius="0.005"/></geometry>
+      <material name="plastic"><color rgba="1.0 1.0 0.0 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><sphere radius="0.005"/></geometry>
+    </collision>
+  </link>
+
+  <!-- ==================== 二、关节（12 个） ==================== -->
+
+  <!-- world_joint：世界锚固关节：把机器人固定到 world 世界坐标系（第二章报告表2 world_joint） -->
+  <joint name="world_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="world"/>
+    <child link="base_link"/>
+  </joint>
+
+  <!-- joint1：腰关节：绕竖直 z 轴回转，限位 ±90° -->
+  <joint name="joint1" type="revolute">
+    <origin xyz="0 0 0.052" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="link1"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="3.5"/>
+  </joint>
+
+  <!-- joint2：大臂关节：rpy=(-1.5708,0,0) 把物理装配方向转换为绕局部 z 轴旋转；静息位 -1.5708 rad 使大臂水平前伸 -->
+  <joint name="joint2" type="revolute">
+    <origin xyz="0 0 0.018" rpy="-1.5708 0 0"/>
+    <parent link="link1"/>
+    <child link="link2"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.3562" upper="-0.2269" effort="1000" velocity="3.5"/>
+  </joint>
+
+  <!-- joint3：肘关节：轴线沿大臂延伸方向 -->
+  <joint name="joint3" type="revolute">
+    <origin xyz="0.08 0 0" rpy="0 0 0"/>
+    <parent link="link2"/>
+    <child link="link3"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.7854" upper="2.18166" effort="1000" velocity="3.5"/>
+  </joint>
+
+  <!-- joint4：腕摆关节 -->
+  <joint name="joint4" type="revolute">
+    <origin xyz="0.07615 0 0" rpy="0 0 0"/>
+    <parent link="link3"/>
+    <child link="link4"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.0944" upper="2.0944" effort="1000" velocity="3.5"/>
+  </joint>
+
+  <!-- joint5：腕回转关节：保留 SolidWorks 实测的 8.79e-5 rad 微偏转 -->
+  <joint name="joint5" type="revolute">
+    <origin xyz="0.0854 0 0" rpy="-1.57079632679489 8.79419361882729E-05 -1.5707963267949"/>
+    <parent link="link4"/>
+    <child link="link5"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.5708" upper="1.5708" effort="1000" velocity="3.5"/>
+  </joint>
+
+  <!-- left_gripper_joint：左夹指关节：0 ~ 1.5708 rad（舵机 ID5 驱动） -->
+  <joint name="left_gripper_joint" type="revolute">
+    <origin xyz="0 -0.0123499997975674 0.016" rpy="3.14159 -1.5708 0"/>
+    <parent link="link5"/>
+    <child link="left_gripper_link"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="0" upper="1.5708" effort="1000" velocity="3.5"/>
+  </joint>
+
+  <!-- left_rubber_pad_joint：左软垫固定关节 -->
+  <joint name="left_rubber_pad_joint" type="fixed">
+    <origin xyz="0.0810000000000007 -0.0109999999999981 0" rpy="0 0 0"/>
+    <parent link="left_gripper_link"/>
+    <child link="left_rubber_pad_link"/>
+  </joint>
+
+  <!-- right_gripper_joint：右夹指关节：mimic 左指、倍率 -1，实现单滑块控制双指反向联动 -->
+  <joint name="right_gripper_joint" type="revolute">
+    <origin xyz="0 0.00965 0.016" rpy="3.14159 -1.5708 0"/>
+    <parent link="link5"/>
+    <child link="right_gripper_link"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-1.5708" upper="0" effort="1000" velocity="3.5"/>
+    <mimic joint="left_gripper_joint" multiplier="-1" offset="0"/>
+  </joint>
+
+  <!-- right_rubber_pad_joint：右软垫固定关节 -->
+  <joint name="right_rubber_pad_joint" type="fixed">
+    <origin xyz="0.081 0.011 0" rpy="0 0 0"/>
+    <parent link="right_gripper_link"/>
+    <child link="right_rubber_pad_link"/>
+  </joint>
+
+  <!-- camera_link：相机安装关节：固定于 link4（第二章报告表2 camera_link） -->
+  <joint name="camera_link" type="fixed">
+    <origin xyz="0.06715 -0.0530000000000002 0.0125000000000016" rpy="0 1.5707963267949 0"/>
+    <parent link="link4"/>
+    <child link="camera"/>
+  </joint>
+
+  <!-- tool_center_joint：工具中心点（TCP）关节：位于腕心沿工具方向 0.1 m 处，正逆解与抓取判定都以它为准 -->
+  <joint name="tool_center_joint" type="fixed">
+    <origin xyz="0 0 0.1" rpy="0 0 0"/>
+    <parent link="link5"/>
+    <child link="tool_center_frame"/>
+  </joint>
+
+  <!-- ==================== 三、原始 URDF 中的 PyBullet 专用标签（保留备份） ====================
+       左侧与右侧软垫在原始 URDF 里带有 <contact> 摩擦标签（PyBullet 扩展，ROS urdfdom 不识别），
+       为保证 ROS 下 urdf 解析无警告，本复原版不启用，原文照录如下：
+
+       <contact>
+         <friction_anchor/>
+         <stiffness value="30000.0"/>
+         <damping value="1000.0"/>
+         <spinning_friction value="0.1"/>
+         <lateral_friction value="1.0"/>
+       </contact>
+  ============================================================================================ -->
+</robot>
+

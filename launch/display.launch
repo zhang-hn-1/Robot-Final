@@ -1,0 +1,57 @@
+<launch>
+  <!--
+  ============================================================================
+   display.launch —— 只做模型可视化（不含任何算法节点）
+   第6组 · 桌面小管家 · 课程代码 (2026-2027-1)-S0610350-04
+  ============================================================================
+   【文件性质】原始工程包中的 launch 文件未随交付材料提供，本文件依据
+   第二章实验报告第 5 节「launch 文件与 URDF 可视化」给出的片段复原：
+     · arg rviz / arg model
+     · param robot_description textfile
+     · joint_state_publisher_gui（source_list=/desktop_arm/manual_joint_states，
+       zeros 预设 joint2=-1.5708、left_gripper_joint=0.6）
+     · robot_state_publisher
+     · rviz -d $(find desktop_arm_description)/rviz/workcell.rviz
+   报告同时提到本 launch 会启动 desktop_scene 节点；该节点属于配套功能包
+   desktop_helper_scene（桌面、料筒、物块等参数化场景），未随交付材料提供，
+   本复原版不加该节点（加了会因包缺失而报错），如需场景请自行放入该包后
+   取消下面第 6 段的注释。
+   复原依据详见 代码包自检.md 第 2 节。
+  ============================================================================
+  -->
+
+  <arg name="rviz" default="true"/>
+  <arg name="model" default="$(find desktop_arm_description)/urdf/arm5dof.urdf"/>
+
+  <!-- 1) 用 textfile 方式装载 URDF：机器人描述只在此处定义一次，
+          robot_state_publisher 与 RViz 的 RobotModel 显示都从该参数取 -->
+  <param name="robot_description" textfile="$(arg model)"/>
+
+  <!-- 2) 关节状态源：六个滑块（joint1~joint5 + left_gripper_joint），
+          右夹指由 URDF 的 mimic 自动联动；source_list 让自动演示节点也能
+          发布 /desktop_arm/manual_joint_states，避免双源冲突 -->
+  <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui"
+        type="joint_state_publisher_gui" output="screen">
+    <rosparam param="source_list">[/desktop_arm/manual_joint_states]</rosparam>
+    <rosparam param="zeros">{joint1: 0.0, joint2: -1.5708, joint3: 0.0,
+                             joint4: 0.0, joint5: 0.0, left_gripper_joint: 0.6}</rosparam>
+  </node>
+
+  <!-- 3) 订阅 /joint_states，按 URDF 正运动学实时发布 TF -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher"
+        type="robot_state_publisher" output="screen"/>
+
+  <!-- 4) RViz：读 robot_description 渲染网格，按 workcell.rviz 的显示配置
+          打开 RobotModel / TF / Grid / Image -->
+  <node if="$(arg rviz)" name="rviz" pkg="rviz" type="rviz"
+        args="-d $(find desktop_arm_description)/rviz/workcell.rviz" output="screen"/>
+
+  <!-- 5) 无 GUI 的 PC / 服务器上可用：roslaunch ... rviz:=false
+           仅看 TF 与话题，或配合 rqt 使用 -->
+
+  <!-- 6) 场景节点（需 desktop_helper_scene 包，未随本包提供）：
+  <include file="$(find desktop_helper_scene)/launch/desktop_scene.launch">
+    <arg name="workspace_x" value="0.24"/>
+  </include>
+  -->
+</launch>

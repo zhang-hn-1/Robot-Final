@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<!--
+==========================================================================================
+ desktop_arm_description / package.xml
+ 第6组 · 桌面小管家 · 课程代码 (2026-2027-1)-S0610350-04
+
+ 【文件性质】新增文件。原始工程包虽然由报告确认为 catkin 功能包
+ desktop_arm_description（报告第 5 节 launch 里用 $(find desktop_arm_description)），
+ 但 package.xml 未随交付材料提供；本文件按 ROS1 catkin 规范补写，
+ 让本包能被 catkin_make 正常识别、能 roslaunch。
+ 邮箱按「学号@hdu.edu.cn」书写，如与实际不符请自行替换。
+==========================================================================================
+-->
+<package format="2">
+  <name>desktop_arm_description</name>
+  <version>1.0.0</version>
+  <description>
+    DICE 五自由度机械臂（实验箱 6 号）URDF 模型与可视化、颜色分拣与手势搬运联调节点。
+    第6组《机器人感知与控制综合实践》综合设计："桌面小管家"——机械臂目标识别、
+    自动分拣与手势搬运一体化系统。
+  </description>
+
+  <maintainer email="24061733@hdu.edu.cn">张航宁 24061733</maintainer>
+  <author email="24061733@hdu.edu.cn">张航宁 24061733</author>
+  <author email="24061720@hdu.edu.cn">张浩轩 24061720</author>
+  <author email="24061734@hdu.edu.cn">吴锐超 24061734</author>
+
+  <license>GPL-3.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- 模型可视化 -->
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>joint_state_publisher_gui</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>urdf</exec_depend>
+  <exec_depend>xacro</exec_depend>
+
+  <!-- Gazebo 物理仿真（可选，见 launch/gazebo.launch） -->
+  <exec_depend>gazebo_ros</exec_depend>
+
+  <!-- 算法节点（scripts/） -->
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>image_transport</exec_depend>
+  <exec_depend>usb_cam</exec_depend>
+
+  <export>
+    <gazebo_ros gazebo_model_path="${prefix}/urdf"/>
+  </export>
+</package>

@@ -1,0 +1,51 @@
+<launch>
+  <!--
+  ============================================================================
+   stack.launch —— 在 display.launch 之上追加算法节点（一键联调入口）
+   第6组 · 桌面小管家 · 课程代码 (2026-2027-1)-S0610350-04
+  ============================================================================
+   【用途】把「模型可视化」与「算法节点」串成一条 roslaunch 命令，方便现场演示
+           与助教复现。四组启动命令见 README.md 第 6 节。
+   【文件性质】原始工程包中 stack.launch 会追加自动堆叠节点（报告第 5 节），
+           但对应节点源码未随交付材料提供。本复原版改为启动本包 scripts/ 下
+           两个「薄封装节点」，它们把实验六的分拣判决与实验七的手势服务端
+           搬到 ROS 话题上，作为联调/演示通道：
+             · color_sort_node      : /usb_cam/image_raw → /desktop_arm/color
+             · gesture_tcp_node     : TCP 9999 收 JSON → /desktop_arm/target_cmd
+                                      + /desktop_arm/manual_joint_states（RViz 同步）
+           两个节点均为本次整理时新增（详见 README 第 7 节与 代码包自检.md 第 2 节），
+           已通过 python3 -m py_compile 语法检查，但未在 ROS 环境逐帧回归。
+           报告中正式实验流程仍以 Jupyter Notebook 驱动真机为准（README 第 6 节命令 3）。
+   【注意】真机 SDK 需要 DICE 的 uservo.py / arm5dof_kinematic.py，本包未提供，
+           所以下面两个节点默认只发话题、不驱动舵机；设置 use_arm:=true 才会尝试
+           调用串口 SDK（缺模块时会打印告警并自动退回纯话题模式）。
+  ============================================================================
+  -->
+
+  <arg name="rviz" default="true"/>
+  <arg name="use_arm" default="false"/>
+  <arg name="image_topic" default="/usb_cam/image_raw"/>
+  <arg name="tcp_port" default="9999"/>
+
+  <!-- 1) 先起模型可视化三层（robot_description + joint_state_publisher_gui + rsp + rviz） -->
+  <include file="$(find desktop_arm_description)/launch/display.launch">
+    <arg name="rviz" value="$(arg rviz)"/>
+  </include>
+
+  <!-- 2) 颜色识别与分拣判决节点：HSV 四色阈值与 5 帧锁存逻辑取自实验六
+          《我的垃圾分类.ipynb》，判决结果发布为 std_msgs/String -->
+  <node name="color_sort_node" pkg="desktop_arm_description" type="color_sort_node.py"
+        output="screen" required="false">
+    <param name="image_topic" value="$(arg image_topic)"/>
+    <param name="use_arm" value="$(arg use_arm)"/>
+    <param name="confirm_frames" value="5"/>
+  </node>
+
+  <!-- 3) 手势 TCP 服务端节点：与实验七 new.py（手势客户端）配对，
+          默认 9999 端口，JSON 行协议 {"action": "target1|target2|catch|stop|hold", "step": 3.0} -->
+  <node name="gesture_tcp_node" pkg="desktop_arm_description" type="gesture_tcp_node.py"
+        output="screen" required="false">
+    <param name="tcp_port" value="$(arg tcp_port)"/>
+    <param name="use_arm" value="$(arg use_arm)"/>
+  </node>
+</launch>

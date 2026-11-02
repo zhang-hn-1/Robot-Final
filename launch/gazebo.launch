@@ -1,0 +1,55 @@
+<launch>
+  <!--
+  ============================================================================
+   gazebo.launch —— 把同一份 URDF 注入 Gazebo 物理仿真
+   第6组 · 桌面小管家 · 课程代码 (2026-2027-1)-S0610350-04
+  ============================================================================
+   【文件性质】依据第二章实验报告第 7 节给出的片段复原：empty_world.launch
+           提供地面与光照，spawn_model 以 -urdf -param robot_description 加载，
+           并用 -J joint2 -1.5708 把大臂预设到水平静息位。
+   【已知局限】原始工程未接 ros_control：模型里没有 <transmission> 与
+           controller 配置，关节角只能由 gz joint / spawn 的 -J 参数指定，
+           无法通过 ROS 话题直接控关节（报告第 11 节「问题与分析」已如实写明）。
+   【复原依据】代码包自检.md 第 2 节。
+  ============================================================================
+  -->
+
+  <arg name="paused" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="model" default="$(find desktop_arm_description)/urdf/arm5dof.urdf"/>
+  <arg name="spawn_x" default="0"/>
+  <arg name="spawn_y" default="0"/>
+  <arg name="spawn_z" default="0.1"/>
+
+  <!-- 1) robot_description：spawn_model 用 -param 从这里取模型 -->
+  <param name="robot_description" textfile="$(arg model)"/>
+
+  <!-- 2) 空世界：地面、太阳光、物理引擎；paused=true 便于先摆位姿再放行 -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="$(arg gui)"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="headless" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+
+  <!-- 3) TF 发布：Gazebo 里没有 joint_state_publisher 时，可视化侧仍需要
+          robot_state_publisher + 关节状态。这里节流发布全零位形，
+          Gazebo 侧的关节角由 -J 与 gz joint 命令决定，二者仅用于看 TF。 -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher"
+        type="robot_state_publisher" output="screen"/>
+  <node name="joint_state_publisher" pkg="joint_state_publisher"
+        type="joint_state_publisher" output="screen">
+    <rosparam param="zeros">{joint1: 0.0, joint2: -1.5708, joint3: 0.0,
+                             joint4: 0.0, joint5: 0.0, left_gripper_joint: 0.0}</rosparam>
+  </node>
+
+  <!-- 4) 生成模型：-urdf -param robot_description，-J 把大臂预置到 -1.5708 rad -->
+  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-urdf -param robot_description -model arm5dof -x $(arg spawn_x) -y $(arg spawn_y) -z $(arg spawn_z) -J joint2 -1.5708"/>
+
+  <!-- 5) 环绕验证（报告第 7 节的做法，命令行手动执行，不写成节点）：
+         gz joint -m arm5dof -j joint1 ==set-position 1.5708
+         gz joint -m arm5dof -j joint1 ==set-position -1.5708
+  -->
+</launch>
