@@ -114,6 +114,6 @@ Robot-Final/
 - 手势编码（四指状态位拼 0~15 码）借鉴了 [Gesture-Controlled-Virtual-Mouse](https://github.com/Viral-Doshi/Gesture-Controlled-Virtual-Mouse)，判据、双级确认、状态机与通信全部重写；`src/gesture/new.py` 属于该项目的派生文件，因此整体沿用 GPL-3.0。
 - 手部关键点用 [MediaPipe Hands](https://google.github.io/mediapipe/solutions/hands.html)，图像处理用 [OpenCV](https://opencv.org)，机械臂 SDK 来自 [DICE](https://www.dice.com.cn/)，框架是 [ROS](https://www.ros.org)。
 
-综合设计报告（53 页，含建模、算法、实验数据与故障复盘）在 [docs/第6组_综合设计报告.pdf](docs/第6组_综合设计报告.pdf)。
+综合设计报告（57 页，正文 53 页，含建模、算法、实验数据与故障复盘）在 [docs/第6组_综合设计报告.pdf](docs/第6组_综合设计报告.pdf)。
 
 课程代码：(2026-2027-1)-S0610350-04。License: GPL-3.0。
